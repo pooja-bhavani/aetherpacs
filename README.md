@@ -15,7 +15,7 @@ AetherPACS is a proof of concept showing that core medical imaging capabilitiesâ
 
 ## Step-by-Step Testing & Verification
 
-(Zerops ZCP Quickstart)[https://docs.zerops.io/zcp/quickstart]
+[Zerops ZCP Quickstart](https://docs.zerops.io/zcp/quickstart)
 
 **Method A: Testing via the Web UI**
 
