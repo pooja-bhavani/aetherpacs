@@ -4,7 +4,7 @@
 
 A small PACS system the kind of software hospitals use to store, process, and view medical scans (X-ray, CT, MRI) in DICOM format. Upload a scan and it moves through a real processing pipeline before showing up in a browser-based viewer.
 
-(Live Link)[https://web-21f.ny1.zerops.app/]
+(Live Link)[https://web-21f.ny1.zerops.app/] 
 
 ## What it Does 
 
