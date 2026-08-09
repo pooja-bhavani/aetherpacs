@@ -85,6 +85,9 @@ AetherPACS is built as a fully decoupled, production-grade 6-service system. The
 * **ZCP Remote Workspace:** We leveraged the **Zerops Control Plane (ZCP)** workspace container, utilizing its built-in Browser VS Code (Cloud IDE) and automated Claude Code agent to write, deploy, and debug in-network services in real-time.
 
 
+## System Limitations & Codec Exclusions
+
+DICOM files with compressed pixel data (common in real clinical exports) get their metadata extracted correctly but won't render an image. The specialized C++ decompression codec library required for this task failed to build on this container OS, so it was excluded from this proof of concept. These studies still process and index correctly in the catalog, but display a yellow "procedural simulation" badge on the viewport instead of a live visual render.
 
 
 
