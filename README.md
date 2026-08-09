@@ -13,17 +13,33 @@ For small clinics, rural practices, or medical facilities in lower-income region
 ## The Value
 AetherPACS is a proof of concept showing that core medical imaging capabilities—storing scans securely, extracting metadata automatically, and providing a diagnostic-quality viewer—can scale down to run on modern, usage-based utility infrastructure. By shifting pixel processing to the client browser and offloading file parsing to a background queue, the entire application can run for dollars a month instead of requiring a six-figure upfront license.
 
-## Diagnostic Interface & Front-End Design
-Radiologists work in dark reading rooms to maximize contrast perception and minimize eye strain. The interface is custom-designed around this environment:
+## How Deeply is Zerops leveraged in this project
+AetherPACS is built as a fully decoupled, production-grade 6-service system. There are no external cloud accounts or third-party platforms involved; Zerops serves as the complete bare-metal infrastructure and deployment layer.
 
-- Contrast-Optimized Theme: A deep-slate (#020617) base layout highlighted by precise clinical emerald (#10b981) and neon sky-blue interactive elements.
-  
-- HTML5 Canvas Viewport: Implements raw pixel manipulation directly in the browser:
-  
-• Interactive Window Width (W/W) and Window Center (W/C) Sliders: Adjust Hounsfield Unit (HU) brightness and contrast levels dynamically without server-side recalculations.
-
-• Modality LUT Presets: Fast buttons to instantly re-map look-up tables (LUT) for specific medical targets (Bone, Lung, Brain, Soft Tissue).
-
-• Orthopedic Measurement Calipers: Click and drag directly on the canvas to measure anatomical features, with distance calculated in physical millimeters (mm) based on embedded DICOM pixel spacing.
-
-• Crosshair Overlays & Magnification: Toggle alignment grids and zoom multipliers to inspect fine details.
+                      [ Public Internet ]
+                               │
+                               ▼ (Port 80/443)
+                  ┌─────────────────────────┐
+                  │    Nginx Web Server     │ (web)
+                  └────────────┬────────────┘
+                               │ (Internal Routing)
+                               ▼ (Port 3000)
+                  ┌─────────────────────────┐
+                  │   Node.js API Gateway   │ (api)
+                  └──────┬────────────┬─────┘
+                         │            │
+             ┌───────────┘            └───────────┐
+             ▼ (Postgres TCP)                     ▼ (NATS TCP)
+    ┌─────────────────┐                  ┌─────────────────┐
+    │  PostgreSQL DB  │ (db)             │   NATS Queue    │ (queue)
+    └─────────────────┘                  └────────┬────────┘
+                                                  │
+                                                  ▼ (Asynchronous)
+                                         ┌─────────────────┐
+                                         │  Python Parser  │ (worker)
+                                         └────────┬────────┘
+                                                  │ (S3 Upload)
+                                                  ▼ (Port 80)
+                                         ┌─────────────────┐
+                                         │   S3 Storage    │ (storage)
+                                         └─────────────────┘
