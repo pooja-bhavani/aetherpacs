@@ -19,7 +19,11 @@ Radiologists work in dark reading rooms to maximize contrast perception and mini
 - Contrast-Optimized Theme: A deep-slate (#020617) base layout highlighted by precise clinical emerald (#10b981) and neon sky-blue interactive elements.
   
 - HTML5 Canvas Viewport: Implements raw pixel manipulation directly in the browser:
+  
 • Interactive Window Width (W/W) and Window Center (W/C) Sliders: Adjust Hounsfield Unit (HU) brightness and contrast levels dynamically without server-side recalculations.
+
 • Modality LUT Presets: Fast buttons to instantly re-map look-up tables (LUT) for specific medical targets (Bone, Lung, Brain, Soft Tissue).
+
 • Orthopedic Measurement Calipers: Click and drag directly on the canvas to measure anatomical features, with distance calculated in physical millimeters (mm) based on embedded DICOM pixel spacing.
+
 • Crosshair Overlays & Magnification: Toggle alignment grids and zoom multipliers to inspect fine details.
