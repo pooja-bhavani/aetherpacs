@@ -101,7 +101,7 @@ AetherPACS is built as a fully decoupled, production-grade 6-service system. The
 
 DICOM files with compressed pixel data (common in real clinical exports) get their metadata extracted correctly but won't render an image. The specialized C++ decompression codec library required for this task failed to build on this container OS, so it was excluded from this proof of concept. These studies still process and index correctly in the catalog, but display a yellow "procedural simulation" badge on the viewport instead of a live visual render.
 
-checkout this Blog: [Blog](https://medium.com/@poojabhavani19/scaling-down-the-clinic-how-we-built-a-medical-pacs-on-zerops-for-the-price-of-a-cup-of-coffee-af811bddc9f0)
+checkout this Blog: [aetherpacsBlog](https://medium.com/@poojabhavani19/scaling-down-the-clinic-how-we-built-a-medical-pacs-on-zerops-for-the-price-of-a-cup-of-coffee-af811bddc9f0)
 
 
 
