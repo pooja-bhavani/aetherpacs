@@ -1,0 +1,16 @@
+zerops:
+  - setup: web
+    build:
+      base: nodejs@20
+      envVariables:
+        NODE_ENV: development
+      buildCommands:
+        - cp index.source.html index.html
+        - npm install
+        - npm run build
+        - rm -rf assets
+        - cp -r dist/* .
+      deployFiles:
+        - .
+    run:
+      base: static

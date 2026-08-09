@@ -1,0 +1,33 @@
+zerops:
+  - setup: api
+    build:
+      base: nodejs@20
+      envVariables:
+        NODE_ENV: development
+      buildCommands:
+        - npm install
+        - npm run build
+      deployFiles:
+        - .
+    run:
+      base: nodejs@20
+      ports:
+        - port: 3000
+          httpSupport: true
+      start: node dist/server.js
+      healthCheck:
+        httpGet:
+          port: 3000
+          path: /health
+      envVariables:
+        DB_HOST: ${db_hostname}
+        DB_USER: ${db_user}
+        DB_PASSWORD: ${db_password}
+        DB_NAME: ${db_dbName}
+        NATS_URL: ${queue_hostname}:${queue_port}
+        NATS_USER: ${queue_user}
+        NATS_PASS: ${queue_password}
+        S3_ENDPOINT: ${storage_apiUrl}
+        S3_ACCESS_KEY: ${storage_accessKeyId}
+        S3_SECRET_KEY: ${storage_secretAccessKey}
+        S3_BUCKET: ${storage_bucketName}

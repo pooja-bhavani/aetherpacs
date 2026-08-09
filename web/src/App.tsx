@@ -1,22 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  FolderHeart, 
-  Layers, 
-  FileCheck, 
-  Radio, 
-  Eye, 
-  Sliders, 
-  Maximize2, 
-  Cpu, 
-  Ruler, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  FolderHeart,
+  Layers,
+  FileCheck,
+  Radio,
+  Eye,
+  Sliders,
+  Maximize2,
+  Cpu,
+  Ruler,
+  CheckCircle2,
+  AlertCircle,
   RefreshCw,
   Database,
   Grid,
   ChevronRight,
   TrendingUp,
-  Download
+  Download,
+  Info,
+  X
 } from 'lucide-react';
 
 interface PatientStudy {
@@ -55,6 +57,17 @@ export default function App() {
   
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [showAbout, setShowAbout] = useState(true);
+  const [isRealRender, setIsRealRender] = useState(false);
+
+  // fetchStudies is captured once by setInterval below and never recreated, so it can only
+  // see activeStudy's value via a ref (a plain state read here would be permanently stale
+  // at "null" — the value from the render that created the interval — causing every 6s poll
+  // to force-reset the selection back to the most recent study regardless of what's clicked).
+  const activeStudyRef = useRef<PatientStudy | null>(null);
+  useEffect(() => {
+    activeStudyRef.current = activeStudy;
+  }, [activeStudy]);
 
   // Auto-resolve backend API address dynamically at runtime in Zerops
   let API_BASE = window.location.origin.includes('5173') ? 'http://localhost:3000' : '';
@@ -73,7 +86,7 @@ export default function App() {
       const data = await res.json();
       if (Array.isArray(data)) {
         setStudies(data);
-        if (data.length > 0 && !activeStudy) {
+        if (data.length > 0 && !activeStudyRef.current) {
           setActiveStudy(data[0]);
         }
       }
@@ -107,7 +120,9 @@ export default function App() {
     }
   }, [activeStudy]);
 
-  // Procedural Medical Canvas Rendering Engine
+  // Diagnostic Viewport Rendering — tries the real decoded DICOM pixel preview first;
+  // falls back to procedural illustrative rendering when no real preview exists
+  // (the 3 seeded demo studies have no source file, so they always use the fallback).
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -116,140 +131,159 @@ export default function App() {
 
     const width = canvas.width;
     const height = canvas.height;
+    let cancelled = false;
 
-    // Clear Canvas
+    const drawOverlays = () => {
+      // Grid Overlay
+      if (isCrosshairOn) {
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.25)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(width / 2, 0);
+        ctx.lineTo(width / 2, height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, height / 2);
+        ctx.lineTo(width, height / 2);
+        ctx.stroke();
+      }
+
+      // Active Orthopedic Measurement Caliper line drawing
+      if (caliperPoints) {
+        ctx.strokeStyle = '#10b981'; // vibrant clinical green
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(caliperPoints.x1, caliperPoints.y1);
+        ctx.lineTo(caliperPoints.x2, caliperPoints.y2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#059669';
+        ctx.beginPath();
+        ctx.arc(caliperPoints.x1, caliperPoints.y1, 5, 0, Math.PI * 2);
+        ctx.arc(caliperPoints.x2, caliperPoints.y2, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (caliperDistance) {
+          ctx.fillStyle = '#020617';
+          ctx.fillRect((caliperPoints.x1 + caliperPoints.x2) / 2 - 40, (caliperPoints.y1 + caliperPoints.y2) / 2 - 12, 80, 24);
+          ctx.strokeStyle = '#10b981';
+          ctx.strokeRect((caliperPoints.x1 + caliperPoints.x2) / 2 - 40, (caliperPoints.y1 + caliperPoints.y2) / 2 - 12, 80, 24);
+
+          ctx.font = 'bold 10px monospace';
+          ctx.fillStyle = '#34d399';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(caliperDistance, (caliperPoints.x1 + caliperPoints.x2) / 2, (caliperPoints.y1 + caliperPoints.y2) / 2);
+        }
+      }
+    };
+
+    const drawProcedural = () => {
+      ctx.fillStyle = '#020617';
+      ctx.fillRect(0, 0, width, height);
+
+      // Procedural Brain/X-Ray image builder based on active patient modality
+      if (activeStudy?.modality === 'MR') {
+        ctx.save();
+        ctx.translate(width / 2, height / 2);
+        ctx.scale(zoomLevel, zoomLevel);
+
+        ctx.beginPath();
+        ctx.arc(0, -10, 110, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(148, 163, 184, ${windowWidth / 600})`;
+        ctx.lineWidth = 4;
+        ctx.stroke();
+
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.1, 1 - (windowCenter / 100))})`;
+        ctx.beginPath();
+        ctx.ellipse(-30, -20, 20, 45, Math.PI / 6, 0, Math.PI * 2);
+        ctx.ellipse(30, -20, 20, 45, -Math.PI / 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = `rgba(125, 211, 252, ${Math.max(0.2, 0.8 - (windowCenter / 150))})`;
+        ctx.lineWidth = 1.5;
+        for (let i = -50; i < 50; i += 12) {
+          ctx.beginPath();
+          ctx.moveTo(-60, i);
+          ctx.quadraticCurveTo(0, i + 8, 60, i);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      } else if (activeStudy?.modality === 'CR') {
+        ctx.save();
+        ctx.translate(width / 2, height / 2);
+        ctx.scale(zoomLevel, zoomLevel);
+
+        ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.2, 1.2 - (windowCenter / 90))})`;
+        ctx.fillRect(-15, -160, 30, 320);
+
+        ctx.strokeStyle = `rgba(203, 213, 225, ${Math.max(0.2, windowWidth / 500)})`;
+        ctx.lineWidth = 6;
+        for (let i = -120; i < 120; i += 24) {
+          ctx.beginPath();
+          ctx.arc(-80, i, 45, Math.PI * 0.8, Math.PI * 1.8);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(80, i, 45, Math.PI * 1.2, Math.PI * 0.2);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = `rgba(251, 113, 133, ${Math.max(0.05, 0.4 - (windowCenter / 200))})`;
+        ctx.beginPath();
+        ctx.arc(25, 20, 50, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.translate(width / 2, height / 2);
+        ctx.scale(zoomLevel, zoomLevel);
+
+        ctx.strokeStyle = 'rgba(71, 85, 105, 0.8)';
+        ctx.lineWidth = 8;
+        ctx.strokeRect(-140, -140, 280, 280);
+
+        ctx.fillStyle = `rgba(167, 243, 208, ${Math.max(0.1, 0.9 - (windowCenter / 120))})`;
+        ctx.beginPath();
+        ctx.ellipse(-80, 20, 25, 45, Math.PI / 4, 0, Math.PI * 2);
+        ctx.ellipse(80, 20, 25, 45, -Math.PI / 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+      }
+    };
+
     ctx.fillStyle = '#020617';
     ctx.fillRect(0, 0, width, height);
 
-    // Procedural Brain/X-Ray image builder based on active patient modality
-    if (activeStudy?.modality === 'MR') {
-      // Procedural MRI Slice Simulation
-      ctx.save();
-      ctx.translate(width / 2, height / 2);
-      ctx.scale(zoomLevel, zoomLevel);
-
-      // Render brain contour using canvas arcs
-      ctx.beginPath();
-      ctx.arc(0, -10, 110, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(148, 163, 184, ${windowWidth / 600})`;
-      ctx.lineWidth = 4;
-      ctx.stroke();
-
-      // Ventricles structure inside
-      ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.1, 1 - (windowCenter / 100))})`;
-      ctx.beginPath();
-      ctx.ellipse(-30, -20, 20, 45, Math.PI / 6, 0, Math.PI * 2);
-      ctx.ellipse(30, -20, 20, 45, -Math.PI / 6, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Cerebellum folds procedural lines
-      ctx.strokeStyle = `rgba(125, 211, 252, ${Math.max(0.2, 0.8 - (windowCenter / 150))})`;
-      ctx.lineWidth = 1.5;
-      for (let i = -50; i < 50; i += 12) {
-        ctx.beginPath();
-        ctx.moveTo(-60, i);
-        ctx.quadraticCurveTo(0, i + 8, 60, i);
-        ctx.stroke();
-      }
-
-      ctx.restore();
-    } else if (activeStudy?.modality === 'CR') {
-      // Procedural Chest X-Ray Simulator
-      ctx.save();
-      ctx.translate(width / 2, height / 2);
-      ctx.scale(zoomLevel, zoomLevel);
-
-      // Spine column
-      ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.2, 1.2 - (windowCenter / 90))})`;
-      ctx.fillRect(-15, -160, 30, 320);
-
-      // Rib Cage lines left and right
-      ctx.strokeStyle = `rgba(203, 213, 225, ${Math.max(0.2, windowWidth / 500)})`;
-      ctx.lineWidth = 6;
-      for (let i = -120; i < 120; i += 24) {
-        ctx.beginPath();
-        ctx.arc(-80, i, 45, Math.PI * 0.8, Math.PI * 1.8);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.arc(80, i, 45, Math.PI * 1.2, Math.PI * 0.2);
-        ctx.stroke();
-      }
-
-      // Heart outline shadow
-      ctx.fillStyle = `rgba(251, 113, 133, ${Math.max(0.05, 0.4 - (windowCenter / 200))})`;
-      ctx.beginPath();
-      ctx.arc(25, 20, 50, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.restore();
-    } else {
-      // Procedure CT slice with multiple organs
-      ctx.save();
-      ctx.translate(width / 2, height / 2);
-      ctx.scale(zoomLevel, zoomLevel);
-
-      // Abdominal wall
-      ctx.strokeStyle = 'rgba(71, 85, 105, 0.8)';
-      ctx.lineWidth = 8;
-      ctx.strokeRect(-140, -140, 280, 280);
-
-      // Procedural Kidney shapes
-      ctx.fillStyle = `rgba(167, 243, 208, ${Math.max(0.1, 0.9 - (windowCenter / 120))})`;
-      ctx.beginPath();
-      ctx.ellipse(-80, 20, 25, 45, Math.PI / 4, 0, Math.PI * 2);
-      ctx.ellipse(80, 20, 25, 45, -Math.PI / 4, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.restore();
-    }
-
-    // Grid Overlay
-    if (isCrosshairOn) {
-      ctx.strokeStyle = 'rgba(16, 185, 129, 0.25)';
-      ctx.lineWidth = 1;
-      // Vert line
-      ctx.beginPath();
-      ctx.moveTo(width / 2, 0);
-      ctx.lineTo(width / 2, height);
-      ctx.stroke();
-      // Horiz line
-      ctx.beginPath();
-      ctx.moveTo(0, height / 2);
-      ctx.lineTo(width, height / 2);
-      ctx.stroke();
-    }
-
-    // Active Orthopedic Measurement Caliper line drawing
-    if (caliperPoints) {
-      ctx.strokeStyle = '#10b981'; // vibrant clinical green
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(caliperPoints.x1, caliperPoints.y1);
-      ctx.lineTo(caliperPoints.x2, caliperPoints.y2);
-      ctx.stroke();
-
-      // Measurement End nodes
-      ctx.fillStyle = '#059669';
-      ctx.beginPath();
-      ctx.arc(caliperPoints.x1, caliperPoints.y1, 5, 0, Math.PI * 2);
-      ctx.arc(caliperPoints.x2, caliperPoints.y2, 5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Caliper measurement label
-      if (caliperDistance) {
+    if (activeStudy) {
+      // Try the real rendered pixel preview; 404 (seeded/no-file studies) falls back to procedural
+      const img = new window.Image();
+      img.onload = () => {
+        if (cancelled) return;
+        setIsRealRender(true);
         ctx.fillStyle = '#020617';
-        ctx.fillRect((caliperPoints.x1 + caliperPoints.x2) / 2 - 40, (caliperPoints.y1 + caliperPoints.y2) / 2 - 12, 80, 24);
-        ctx.strokeStyle = '#10b981';
-        ctx.strokeRect((caliperPoints.x1 + caliperPoints.x2) / 2 - 40, (caliperPoints.y1 + caliperPoints.y2) / 2 - 12, 80, 24);
-
-        ctx.font = 'bold 10px monospace';
-        ctx.fillStyle = '#34d399';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(caliperDistance, (caliperPoints.x1 + caliperPoints.x2) / 2, (caliperPoints.y1 + caliperPoints.y2) / 2);
-      }
+        ctx.fillRect(0, 0, width, height);
+        ctx.save();
+        ctx.translate(width / 2, height / 2);
+        ctx.scale(zoomLevel, zoomLevel);
+        const fitScale = Math.min(width / img.width, height / img.height) * 0.9;
+        ctx.drawImage(img, -(img.width * fitScale) / 2, -(img.height * fitScale) / 2, img.width * fitScale, img.height * fitScale);
+        ctx.restore();
+        drawOverlays();
+      };
+      img.onerror = () => {
+        if (cancelled) return;
+        setIsRealRender(false);
+        drawProcedural();
+        drawOverlays();
+      };
+      img.src = `${API_BASE}/api/studies/${activeStudy.study_uid}/preview`;
     }
+
+    return () => { cancelled = true; };
   }, [activeStudy, windowWidth, windowCenter, zoomLevel, isCrosshairOn, caliperPoints, caliperDistance]);
 
   // Caliper Mouse handlers
@@ -317,12 +351,17 @@ export default function App() {
       <div className="w-80 border-r border-slate-900 bg-slate-900/60 flex flex-col p-5 space-y-4 backdrop-blur-md">
         
         {/* Workspace Brand Logo */}
-        <div className="flex items-center space-x-2 pb-2 border-b border-slate-800">
-          <Layers className="h-6 w-6 text-sky-400 animate-pulse" />
-          <div>
-            <h1 className="font-extrabold text-lg leading-tight tracking-tight text-slate-200">Aether<span className="text-sky-400">PACS</span></h1>
-            <p className="text-xxs text-slate-400 font-mono tracking-widest uppercase">Diagnostic Diagnostic Server</p>
+        <div className="space-y-2 pb-2 border-b border-slate-800">
+          <div className="flex items-center space-x-2">
+            <Layers className="h-6 w-6 text-sky-400 animate-pulse" />
+            <div>
+              <h1 className="font-extrabold text-lg leading-tight tracking-tight text-slate-200">Aether<span className="text-sky-400">PACS</span></h1>
+              <p className="text-xxs text-slate-400 font-mono tracking-widest uppercase">Cloud-Native Diagnostic Server</p>
+            </div>
           </div>
+          <p className="text-xxs text-slate-500 leading-relaxed">
+            Async DICOM ingestion pipeline for modern radiology — upload a scan and watch it move through the queue, worker, and database in real time.
+          </p>
         </div>
 
         {/* Upload Container */}
@@ -395,12 +434,21 @@ export default function App() {
         <div className="h-16 border-b border-slate-900 px-6 flex items-center justify-between bg-slate-900/10">
           <div className="flex items-center space-x-2">
             <Radio className="h-4.5 w-4.5 text-sky-400 animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Primary Diagnostic Diagnostic Viewport</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Primary Diagnostic Viewport</span>
           </div>
-          <div className="flex items-center space-x-3 text-xxs font-mono text-slate-400 bg-slate-900 border border-slate-800 rounded-full px-4 py-1">
-            <span>PACS Active Node: ZCP Core-A</span>
-            <span className="text-sky-500">●</span>
-            <span>VXLAN Connected</span>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setShowAbout(true)}
+              className="flex items-center gap-1.5 text-xxs font-mono text-sky-400 bg-slate-900 border border-slate-800 hover:border-sky-500 rounded-full px-3 py-1 transition"
+              title="What is this project?"
+            >
+              <Info className="h-3.5 w-3.5" /> About
+            </button>
+            <div className="flex items-center space-x-3 text-xxs font-mono text-slate-400 bg-slate-900 border border-slate-800 rounded-full px-4 py-1">
+              <span>PACS Active Node: ZCP Core-A</span>
+              <span className="text-sky-500">●</span>
+              <span>VXLAN Connected</span>
+            </div>
           </div>
         </div>
 
@@ -443,6 +491,18 @@ export default function App() {
               <p>RES: 512 x 512 px</p>
               <p>DPI: 0.28 mm/px</p>
             </div>
+
+            {activeStudy && (
+              <div
+                className={`absolute bottom-4 left-1/2 -translate-x-1/2 text-xxs font-mono font-bold tracking-wider px-3 py-1 rounded-full border pointer-events-none ${
+                  isRealRender
+                    ? 'bg-emerald-500/10 border-emerald-400/40 text-emerald-300'
+                    : 'bg-amber-500/10 border-amber-400/40 text-amber-300'
+                }`}
+              >
+                {isRealRender ? '● LIVE DICOM RENDER' : '● PROCEDURAL SIMULATION'}
+              </div>
+            )}
           </div>
 
           {/* Viewport Control Bar */}
@@ -562,6 +622,64 @@ export default function App() {
         </div>
 
       </div>
+
+      {/* About This Project — explains purpose + architecture, opens on load */}
+      {showAbout && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-6"
+          onClick={() => setShowAbout(false)}
+        >
+          <div
+            className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-2">
+                <Layers className="h-5 w-5 text-sky-400" />
+                <h2 className="text-lg font-extrabold text-slate-100">What is Aether<span className="text-sky-400">PACS</span>?</h2>
+              </div>
+              <button onClick={() => setShowAbout(false)} className="text-slate-500 hover:text-slate-300 transition">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-slate-300 leading-relaxed">
+              PACS software — the systems that store and route medical scans — usually costs tens to hundreds of
+              thousands of dollars and runs on physical servers on-site. Clinics that can't afford that still need
+              to move scans between doctors somehow, so today that often means a CD handed to the patient, or an
+              X-ray photographed and sent over WhatsApp. AetherPACS is a working prototype of the same core
+              capability — store a scan, extract its medical metadata, view it from any browser — built on
+              infrastructure that costs by actual usage instead of a six-figure purchase, so it scales down to
+              &quot;affordable for a small clinic&quot; instead of only up to &quot;hospital budget.&quot;
+            </p>
+
+            <div className="space-y-2">
+              <h3 className="text-xxs font-bold text-slate-400 uppercase tracking-wider">How it works</h3>
+              <ol className="text-sm text-slate-300 space-y-2">
+                <li className="flex gap-2"><span className="text-sky-400 font-bold">1.</span> <span><b className="text-slate-100">Upload</b> — the API gateway validates the DICOM file and stores it in S3-compatible object storage</span></li>
+                <li className="flex gap-2"><span className="text-sky-400 font-bold">2.</span> <span><b className="text-slate-100">Queue</b> — an ingest job is dispatched over NATS for asynchronous processing</span></li>
+                <li className="flex gap-2"><span className="text-sky-400 font-bold">3.</span> <span><b className="text-slate-100">Parse</b> — a Python worker consumes the queue, extracts study metadata, and writes it to PostgreSQL</span></li>
+                <li className="flex gap-2"><span className="text-sky-400 font-bold">4.</span> <span><b className="text-slate-100">View</b> — this dashboard polls live studies and renders the diagnostic viewport below</span></li>
+              </ol>
+            </div>
+
+            <div className="bg-slate-950 border border-slate-900 rounded-lg p-3 text-xxs text-slate-500 leading-relaxed">
+              <b className="text-slate-400">This is real:</b> upload an actual <span className="text-slate-300">.dcm</span> file
+              and the pipeline decodes its true patient/study metadata and renders its real pixel data — look for the
+              <span className="text-emerald-400 font-bold"> LIVE DICOM RENDER</span> badge on the viewport. The 3 pre-seeded
+              studies above have no source file behind them, so they always show the
+              <span className="text-amber-400 font-bold"> PROCEDURAL SIMULATION</span> badge instead.
+            </div>
+
+            <button
+              onClick={() => setShowAbout(false)}
+              className="w-full py-2.5 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-400/40 text-sky-300 font-bold text-xs uppercase tracking-wider rounded-lg transition"
+            >
+              Explore the Viewer
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

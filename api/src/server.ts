@@ -3,7 +3,7 @@ import cors from 'cors';
 import multer from 'multer';
 import { Pool } from 'pg';
 import { connect, JSONCodec } from 'nats';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import * as fs from 'fs';
 
 const app = express();
@@ -48,7 +48,8 @@ async function initDB() {
         modality VARCHAR(50) NOT NULL,
         study_description VARCHAR(255) NOT NULL,
         study_date TIMESTAMPTZ DEFAULT NOW(),
-        slice_count INTEGER DEFAULT 1
+        slice_count INTEGER DEFAULT 1,
+        preview_key VARCHAR(500)
       );
 
       CREATE TABLE IF NOT EXISTS dicom_tags (
@@ -58,6 +59,10 @@ async function initDB() {
         tag_name VARCHAR(255) NOT NULL,
         tag_value TEXT NOT NULL
       );
+
+      -- Additive migration: preview_key didn't exist in earlier deploys, so CREATE TABLE
+      -- IF NOT EXISTS above is a no-op on an already-existing studies table.
+      ALTER TABLE studies ADD COLUMN IF NOT EXISTS preview_key VARCHAR(500);
     `);
 
     // Check if empty, pre-seed authentic clinical data for the judges to evaluate
@@ -145,6 +150,32 @@ app.get('/api/studies/:studyUid/tags', async (req, res) => {
   }
 });
 
+// Serve the real rendered pixel preview for a study, proxied from object storage.
+// Seeded demo studies have no preview_key — 404 lets the frontend fall back to
+// its illustrative canvas rendering instead of a broken image.
+app.get('/api/studies/:studyUid/preview', async (req, res) => {
+  try {
+    const { studyUid } = req.params;
+    const result = await pool.query('SELECT preview_key FROM studies WHERE study_uid = $1', [studyUid]);
+    const previewKey = result.rows[0]?.preview_key;
+
+    if (!previewKey) {
+      return res.status(404).json({ error: 'No rendered preview available for this study.' });
+    }
+
+    const object = await s3.send(new GetObjectCommand({
+      Bucket: process.env.S3_BUCKET || 'aetherpacs-files',
+      Key: previewKey
+    }));
+
+    res.setHeader('Content-Type', 'image/png');
+    (object.Body as NodeJS.ReadableStream).pipe(res);
+  } catch (err) {
+    console.error('❌ Failed to fetch rendered preview:', err);
+    res.status(404).json({ error: 'Rendered preview not found.' });
+  }
+});
+
 // Handle DICOM file binary upload and dispatch parser job via NATS
 app.post('/api/dicom-ingest', upload.single('file'), async (req, res) => {
   if (!req.file) {
@@ -153,6 +184,21 @@ app.post('/api/dicom-ingest', upload.single('file'), async (req, res) => {
 
   const { originalname, path } = req.file;
   const storageKey = `dicom-raw/${Date.now()}-${originalname}`;
+
+  // Real DICOM Part 10 files carry a 128-byte preamble followed by the "DICM" magic
+  // bytes at offset 128. Reject anything else immediately instead of queuing a job
+  // the worker can only fail on later with no feedback to the uploader.
+  const header = Buffer.alloc(132);
+  const fd = fs.openSync(path, 'r');
+  const bytesRead = fs.readSync(fd, header, 0, 132, 0);
+  fs.closeSync(fd);
+  const isDicom = bytesRead === 132 && header.toString('ascii', 128, 132) === 'DICM';
+  if (!isDicom) {
+    fs.unlinkSync(path);
+    return res.status(400).json({
+      error: 'File does not look like a valid DICOM file (missing "DICM" header at byte 128). Nothing was queued.'
+    });
+  }
 
   try {
     // 1. Upload DICOM to S3 Raw Bucket
@@ -165,7 +211,13 @@ app.post('/api/dicom-ingest', upload.single('file'), async (req, res) => {
     }));
 
     // 2. Dispatch job to NATS queue for Python medical worker
-    const natsConn = await connect({ servers: process.env.NATS_URL || 'nats://queue:4222' });
+    // Credentials passed separately, not embedded in the servers URL — the nats.js
+    // client's URL parser breaks on user:pass@host:port despite it being valid NATS syntax.
+    const natsConn = await connect({
+      servers: process.env.NATS_URL || 'queue:4222',
+      user: process.env.NATS_USER,
+      pass: process.env.NATS_PASS
+    });
     natsConn.publish('dicom.parse', jc.encode({
       storageKey: storageKey,
       originalname: originalname
