@@ -26,6 +26,8 @@ AetherPACS is a proof of concept showing that core medical imaging capabilities�
 
 <img width="1469" height="884" alt="Screenshot 2026-08-09 at 8 28 39 PM" src="https://github.com/user-attachments/assets/80be0b43-7bc0-4017-8c5c-3e27439b6ea3" />
 
+<img width="1470" height="886" alt="Screenshot 2026-08-10 at 12 23 05 AM" src="https://github.com/user-attachments/assets/b0736bdd-8621-4c49-bedd-209365a1601e" />
+
 --- 
 
 ## Step-by-Step Project Testing & Verification
