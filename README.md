@@ -13,6 +13,52 @@ For small clinics, rural practices, or medical facilities in lower-income region
 ## The Value
 AetherPACS is a proof of concept showing that core medical imaging capabilities—storing scans securely, extracting metadata automatically, and providing a diagnostic-quality viewer—can scale down to run on modern, usage-based utility infrastructure. By shifting pixel processing to the client browser and offloading file parsing to a background queue, the entire application can run for dollars a month instead of requiring a six-figure upfront license.
 
+## Step-by-Step Testing & Verification
+
+**Method A: Testing via the Web UI**
+
+Open your local terminal and execute these commands to send a file through the raw pipeline:
+
+1. Ingest a Raw DICOM Binary
+Upload a raw abdominal CT scan directly to your public API gateway:
+
+```
+curl -X POST -F "file=@dicom-files/ct-abdomen.dcm" \
+  https://api-21f-3000.ny1.zerops.app/api/dicom-ingest
+```
+Expected Result: A success response showing that the raw binary was validated, stored in S3, and queued for asynchronous processing.
+
+
+2. Confirm Ingestion & Retrieve the UID
+Fetch the listed studies from the relational database to verify it was parsed. Copy the study_uid from the JSON response:
+```
+curl https://api-21f-3000.ny1.zerops.app/api/studies
+```
+Expected Result: A JSON array of extracted patient records. Copy the unique study_uid of the newly uploaded study from the response (e.g., 1.2.840.113619.2.135...).
+
+3. Inspect Extracted DICOM Header Tags
+Query the parsed binary tags for that specific study:
+```
+curl https://api-21f-3000.ny1.zerops.app/api/studies/<study_uid>/tags
+```
+Expected Result: A complete schema output of parsed group-element headers (such as patient name, scanning modality, kVp, and exposure times).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## How Deeply is Zerops leveraged in this project
 AetherPACS is built as a fully decoupled, production-grade 6-service system. There are no external cloud accounts or third-party platforms involved; Zerops serves as the complete bare-metal infrastructure and deployment layer.
 
@@ -52,4 +98,35 @@ Each service is mapped to a purpose-built container in your import-pacs.yaml inf
 4. db (Managed PostgreSQL): Holds patient records, study indexes, and extracted tag structures.
 5. queue (Managed NATS): Handles fast, low-latency task distribution between the API and background worker.
 6. storage (Managed Object Storage): An S3-compatible local bucket storing raw medical DICOMs and generated image slices.
+
+## Zero-Config Private Networking
+All backend communication is kept isolated within a private VXLAN network. The services communicate directly using Zerops' internal hostnames (http://api:3000, nats://queue:4222, db:5432, and http://storage). Port definitions are controlled dynamically by your committed zerops.yaml, allowing automatic service-to-service discovery without exposing sensitive databases or messaging queues to the public internet.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
