@@ -100,7 +100,11 @@ Each service is mapped to a purpose-built container in your import-pacs.yaml inf
 6. storage (Managed Object Storage): An S3-compatible local bucket storing raw medical DICOMs and generated image slices.
 
 ## Zero-Config Private Networking
-All backend communication is kept isolated within a private VXLAN network. The services communicate directly using Zerops' internal hostnames (http://api:3000, nats://queue:4222, db:5432, and http://storage). Port definitions are controlled dynamically by your committed zerops.yaml, allowing automatic service-to-service discovery without exposing sensitive databases or messaging queues to the public internet.
+All backend communication is kept isolated within a private VXLAN network. 
+
+The services communicate directly using Zerops' internal hostnames (http://api:3000, nats://queue:4222, db:5432, and http://storage). 
+
+Port definitions are controlled dynamically by your committed zerops.yaml, allowing automatic service-to-service discovery without exposing sensitive databases or messaging queues to the public internet.
 
 
 
