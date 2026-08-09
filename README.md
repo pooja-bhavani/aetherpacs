@@ -25,7 +25,24 @@ AetherPACS is a proof of concept showing that core medical imaging capabilitiesâ
 
 ## Step-by-Step Project Testing & Verification
 
+### 1. Open the Dashboard
+Navigate to your live web diagnostic workspace:
+ðŸ‘‰ **[https://web-21f.ny1.zerops.app/](https://web-21f.ny1.zerops.app/)**
 
+### 2. Drive the Pipeline via Terminal
+You can also run testing commands directly from your shell. Three sample DICOM files are included in the `dicom-files/` directory for this purpose.
+
+* **Upload a scan:**
+  ```bash
+  curl -X POST -F "file=@dicom-files/ct-abdomen.dcm" \
+    https://api-21f-3000.ny1.zerops.app/api/dicom-ingest
+  
+### Verify it landed in Postgres:
+Inspect the extracted DICOM header tags: (Replace <study_uid> with the UID returned in the response above)
+:
+Fetch the rendered preview PNG:
+Test validation rules: Uploading a file that isn't a real DICOM scan (like a text file) is instantly blocked and turned away with a 400 Bad Request because the Express gateway validates the standard DICM signature bytes
+.
 
 
 
