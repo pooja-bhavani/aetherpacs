@@ -13,7 +13,6 @@ For small clinics, rural practices, or medical facilities in lower-income region
 ## The Value
 AetherPACS is a proof of concept showing that core medical imaging capabilities—storing scans securely, extracting metadata automatically, and providing a diagnostic-quality viewer—can scale down to run on modern, usage-based utility infrastructure. By shifting pixel processing to the client browser and offloading file parsing to a background queue, the entire application can run for dollars a month instead of requiring a six-figure upfront license.
 
-## Step-by-Step Testing & Verification
 
 [Zerops ZCP Quickstart](https://docs.zerops.io/zcp/quickstart)
 
@@ -21,6 +20,9 @@ AetherPACS is a proof of concept showing that core medical imaging capabilities�
 
 <img width="1469" height="884" alt="Screenshot 2026-08-09 at 8 28 39 PM" src="https://github.com/user-attachments/assets/80be0b43-7bc0-4017-8c5c-3e27439b6ea3" />
 
+--- 
+
+## Step-by-Step Project Testing & Verification
 
 **Method A: Testing via the Web UI**
 
@@ -72,12 +74,6 @@ Expected Result: The upload is immediately blocked and returns a 400 Bad Request
 
 
 
-
-
-
-
-
-
 ## How Deeply is Zerops leveraged in this project
 AetherPACS is built as a fully decoupled, production-grade 6-service system. There are no external cloud accounts or third-party platforms involved; Zerops serves as the complete bare-metal infrastructure and deployment layer.
 
@@ -118,27 +114,11 @@ Each service is mapped to a purpose-built container in your import-pacs.yaml inf
 5. queue (Managed NATS): Handles fast, low-latency task distribution between the API and background worker.
 6. storage (Managed Object Storage): An S3-compatible local bucket storing raw medical DICOMs and generated image slices.
 
-## Zero-Config Private Networking
-All backend communication is kept isolated within a private VXLAN network. 
-
-The services communicate directly using Zerops' internal hostnames (http://api:3000, nats://queue:4222, db:5432, and http://storage). 
-
-Port definitions are controlled dynamically by your committed zerops.yaml, allowing automatic service-to-service discovery without exposing sensitive databases or messaging queues to the public internet.
 
 
+# AetherPACS
 
-
-
-
-
-
-
-
-
-
-
-
-
+A small PACS system — the kind of software hospitals use to store, process, and view medical scans (X-ray, CT, MRI) in DICOM format. Upload a scan and it moves through a real processing pipeline before showing up in a browser-based viewer [1].
 
 
 
