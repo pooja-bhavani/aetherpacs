@@ -1,4 +1,4 @@
-# 🏥 AetherPACS: Clinical Diagnostic Web PACS & Medical DICOM Ingestion Engine
+# AetherPACS: Clinical Diagnostic Web PACS & Medical DICOM Ingestion Engine
 
 <img width="1468" height="884" alt="image" src="https://github.com/user-attachments/assets/309ff246-35fe-46da-a9f5-360dc5dba56d" />
 
