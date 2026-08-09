@@ -37,7 +37,7 @@ You can also run testing commands directly from your shell. Three sample DICOM f
   curl -X POST -F "file=@dicom-files/ct-abdomen.dcm" \
     https://api-21f-3000.ny1.zerops.app/api/dicom-ingest
   
-### Verify it landed in Postgres:
+* Verify it landed in Postgres:
 Inspect the extracted DICOM header tags: (Replace <study_uid> with the UID returned in the response above)
 :
 Fetch the rendered preview PNG:
