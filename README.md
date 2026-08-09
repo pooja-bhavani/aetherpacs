@@ -2,7 +2,7 @@
 
 <img width="1468" height="884" alt="image" src="https://github.com/user-attachments/assets/309ff246-35fe-46da-a9f5-360dc5dba56d" />
 
-A small PACS system — the kind of software hospitals use to store, process, and view medical scans (X-ray, CT, MRI) in DICOM format. Upload a scan and it moves through a real processing pipeline before showing up in a browser-based viewer.
+A small PACS system the kind of software hospitals use to store, process, and view medical scans (X-ray, CT, MRI) in DICOM format. Upload a scan and it moves through a real processing pipeline before showing up in a browser-based viewer.
 
 ## What it Does 
 
