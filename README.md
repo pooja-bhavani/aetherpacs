@@ -37,6 +37,8 @@ How it works
 3. Parse: a Python worker consumes the queue, extracts study metadata, and writes it to PostgreSQL
 4. View: this dashboard polls live studies and renders the diagnostic viewport below
 
+---
+
 ### 2. Drive the Pipeline via Terminal
 You can also run testing commands directly from your shell. Three sample DICOM files are included in the `dicom-files/` directory for this purpose.
 
