@@ -30,10 +30,10 @@ Navigate to your live web diagnostic workspace:
 👉 **[https://web-21f.ny1.zerops.app/](https://web-21f.ny1.zerops.app/)**
 
 How it works
-1.Upload — the API gateway validates the DICOM file and stores it in S3-compatible object storage
-2.Queue — an ingest job is dispatched over NATS for asynchronous processing
-3.Parse — a Python worker consumes the queue, extracts study metadata, and writes it to PostgreSQL
-4.View — this dashboard polls live studies and renders the diagnostic viewport below
+1. Upload — the API gateway validates the DICOM file and stores it in S3-compatible object storage
+2. Queue — an ingest job is dispatched over NATS for asynchronous processing
+3. Parse — a Python worker consumes the queue, extracts study metadata, and writes it to PostgreSQL
+4. View — this dashboard polls live studies and renders the diagnostic viewport below
 
 ### 2. Drive the Pipeline via Terminal
 You can also run testing commands directly from your shell. Three sample DICOM files are included in the `dicom-files/` directory for this purpose.
