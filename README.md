@@ -29,6 +29,12 @@ AetherPACS is a proof of concept showing that core medical imaging capabilities�
 Navigate to your live web diagnostic workspace:
 👉 **[https://web-21f.ny1.zerops.app/](https://web-21f.ny1.zerops.app/)**
 
+How it works
+1.Upload — the API gateway validates the DICOM file and stores it in S3-compatible object storage
+2.Queue — an ingest job is dispatched over NATS for asynchronous processing
+3.Parse — a Python worker consumes the queue, extracts study metadata, and writes it to PostgreSQL
+4.View — this dashboard polls live studies and renders the diagnostic viewport below
+
 ### 2. Drive the Pipeline via Terminal
 You can also run testing commands directly from your shell. Three sample DICOM files are included in the `dicom-files/` directory for this purpose.
 
@@ -41,8 +47,7 @@ You can also run testing commands directly from your shell. Three sample DICOM f
 Inspect the extracted DICOM header tags: (Replace <study_uid> with the UID returned in the response above)
 :
 Fetch the rendered preview PNG:
-Test validation rules: Uploading a file that isn't a real DICOM scan (like a text file) is instantly blocked and turned away with a 400 Bad Request because the Express gateway validates the standard DICM signature bytes
-.
+Test validation rules: Uploading a file that isn't a real DICOM scan (like a text file) is instantly blocked and turned away with a 400 Bad Request because the Express gateway validates the standard DICM signature bytes.
 
 
 
