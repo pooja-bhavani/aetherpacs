@@ -1,0 +1,62 @@
+# import-pacs.yaml
+# Zerops Infrastructure-as-Code Blueprint (AetherPACS)
+# Paste this in the Zerops GUI (Import Dashboard) to spin up the 6-service medical stack
+
+project:
+  name: aetherpacs
+  envVariables:
+    LOG_LEVEL: info
+    NODE_ENV: production
+
+services:
+  # 1. Managed PostgreSQL (Relational Database for patient studies & DICOM metadata)
+  - hostname: db
+    type: postgresql:single@16
+
+  # 2. Managed NATS (High-performance message broker for asynchronous parsing jobs)
+  - hostname: queue
+    type: nats@2.12
+
+  # 3. Managed Object Storage (S3-compatible bucket for raw DICOMs and generated PNG slices)
+  - hostname: storage
+    type: object-storage
+    objectStorageSize: 2
+
+  # 4. Static Web Server (Nginx container serving compiled React/Vite diagnostic PACS dashboard)
+  - hostname: web
+    type: nginx@latest
+    minContainers: 1
+    maxContainers: 2
+
+  # 5. Node.js API Gateway (Express backend validating DICOM headers and coordinating storage)
+  - hostname: api
+    type: nodejs@20
+    minContainers: 1
+    maxContainers: 2
+    envVariables:
+      PORT: 3000
+      DB_HOST: ${db_hostname}
+      DB_USER: ${db_user}
+      DB_PASSWORD: ${db_password}
+      DB_NAME: db
+      NATS_URL: nats://${queue_hostname}:4222
+      S3_ENDPOINT: http://${storage_hostname}
+      S3_ACCESS_KEY: ${storage_accessKeyId}
+      S3_SECRET_KEY: ${storage_secretAccessKey}
+      S3_BUCKET: aetherpacs-files
+
+  # 6. Python DICOM Worker (Asynchronous system parsing binary DICOM headers and generating clinical PNG views)
+  - hostname: worker
+    type: python@3.11
+    minContainers: 1
+    maxContainers: 2
+    envVariables:
+      DB_HOST: ${db_hostname}
+      DB_USER: ${db_user}
+      DB_PASSWORD: ${db_password}
+      DB_NAME: db
+      NATS_URL: nats://${queue_hostname}:4222
+      S3_ENDPOINT: http://${storage_hostname}
+      S3_ACCESS_KEY: ${storage_accessKeyId}
+      S3_SECRET_KEY: ${storage_secretAccessKey}
+      S3_BUCKET: aetherpacs-files
