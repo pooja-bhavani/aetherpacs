@@ -43,3 +43,13 @@ AetherPACS is built as a fully decoupled, production-grade 6-service system. The
                                          ┌─────────────────┐
                                          │   S3 Storage    │ (storage)
                                          └─────────────────┘
+
+Each service is mapped to a purpose-built container in your import-pacs.yaml infrastructure-as-code manifest:
+
+1. web (Static Nginx Runtime): Serves the compiled React/Vite client. Public traffic enters through here.
+2. api (Node.js/Express Runtime): Validates incoming requests, saves study schema definitions in the database, pushes raw binaries to storage, and publishes parsing tasks.
+3. worker (Python Runtime): A background Ubuntu-based service that runs a custom preparation phase (prepareCommands) to compile and link optimized system libraries (python3-numpy and python3-scipy). It listens to NATS, parses binary headers, and generates diagnostic PNG previews.
+4. db (Managed PostgreSQL): Holds patient records, study indexes, and extracted tag structures.
+5. queue (Managed NATS): Handles fast, low-latency task distribution between the API and background worker.
+6. storage (Managed Object Storage): An S3-compatible local bucket storing raw medical DICOMs and generated image slices.
+
