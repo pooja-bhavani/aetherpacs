@@ -1,16 +1,25 @@
 # 🏥 AetherPACS: Clinical Diagnostic Web PACS & Medical DICOM Ingestion Engine
 
-AetherPACS is a production-grade, real-world DICOM Web Viewer and medical Picture Archiving and Communication System (PACS). Built for high-reliability radiology and clinical diagnostic teams, it runs a fully decoupled multi-service pipeline securely connected over a private VXLAN network on Zerops.
+A compact, zero-footprint Picture Archiving and Communication System (PACS) designed to store, process, and view medical scans (X-ray, CT, MRI) in DICOM format directly from a web browser.
 
-## 🏗️ Medical-Grade System Topology
-1. **Clinical Web Dashboard (`web`)**: Compiled React SPA served via Nginx Static. Features an interactive HTML5 Canvas viewport for manipulating DICOM window width/center (W/W, W/C) and drawing orthopedic calipers.
-2. **API Gateway (`api`)**: Express backend storing DICOM study schemas in PostgreSQL, routing binaries to S3, and queuing jobs via NATS.
-3. **Clinical Parser (`worker`)**: Python worker processing raw medical images, parsing headers, and uploading slice previews back to S3.
-4. **Relational Database (`db`)**: PostgreSQL storing structural DICOM headers, patient metadata, and diagnostic annotations.
-5. **Message Broker (`queue`)**: NATS handling asynchronous task distribution between the API and Worker instances.
-6. **Object Storage (`storage`)**: S3-compatible storage managing binary DICOM files and extracted web slices.
+Instead of relying on heavy desktop software or expensive on-premise hardware, AetherPACS runs a decoupled multi-service ingestion pipeline that processes raw uploads, extracts clinical metadata, and renders diagnostic images on demand.
 
-## 🛠️ Local Development & Deployment
-* Run `./setup.sh` to initialize the directory locally.
-* Create a fresh project on Zerops using `import-pacs.yaml`.
-* Deploy instantly using Git push or the Zerops CLI!
+## The Problem & Why It Matters
+
+Standard medical PACS installations are expensive, vendor-locked, and complex. They are built for major hospitals with large budgets, requiring dedicated local servers, high-performance GPUs, and specialized IT support.
+
+For small clinics, rural practices, or medical facilities in lower-income regions, these systems are financially out of reach. In practice, this means medical scans are often burned onto physical CDs that patients must carry themselves, or photographed on mobile phones to be sent over WhatsApp between consulting doctors. This compromises patient privacy, destroys image clarity, and delays diagnostic timelines.
+
+## The Value
+AetherPACS is a proof of concept showing that core medical imaging capabilities—storing scans securely, extracting metadata automatically, and providing a diagnostic-quality viewer—can scale down to run on modern, usage-based utility infrastructure. By shifting pixel processing to the client browser and offloading file parsing to a background queue, the entire application can run for dollars a month instead of requiring a six-figure upfront license.
+
+## Diagnostic Interface & Front-End Design
+Radiologists work in dark reading rooms to maximize contrast perception and minimize eye strain. The interface is custom-designed around this environment:
+
+- Contrast-Optimized Theme: A deep-slate (#020617) base layout highlighted by precise clinical emerald (#10b981) and neon sky-blue interactive elements.
+  
+- HTML5 Canvas Viewport: Implements raw pixel manipulation directly in the browser:
+• Interactive Window Width (W/W) and Window Center (W/C) Sliders: Adjust Hounsfield Unit (HU) brightness and contrast levels dynamically without server-side recalculations.
+• Modality LUT Presets: Fast buttons to instantly re-map look-up tables (LUT) for specific medical targets (Bone, Lung, Brain, Soft Tissue).
+• Orthopedic Measurement Calipers: Click and drag directly on the canvas to measure anatomical features, with distance calculated in physical millimeters (mm) based on embedded DICOM pixel spacing.
+• Crosshair Overlays & Magnification: Toggle alignment grids and zoom multipliers to inspect fine details.
