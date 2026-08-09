@@ -17,6 +17,11 @@ AetherPACS is a proof of concept showing that core medical imaging capabilitiesâ
 
 [Zerops ZCP Quickstart](https://docs.zerops.io/zcp/quickstart)
 
+[Zerops Account Setup](https://zerops.io/?utm_source=kunal)
+
+<img width="1469" height="884" alt="Screenshot 2026-08-09 at 8 28 39â€¯PM" src="https://github.com/user-attachments/assets/80be0b43-7bc0-4017-8c5c-3e27439b6ea3" />
+
+
 **Method A: Testing via the Web UI**
 
 Open your local terminal and execute these commands to send a file through the raw pipeline:
