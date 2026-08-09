@@ -4,6 +4,8 @@
 
 A small PACS system the kind of software hospitals use to store, process, and view medical scans (X-ray, CT, MRI) in DICOM format. Upload a scan and it moves through a real processing pipeline before showing up in a browser-based viewer.
 
+(Live Link)[https://web-21f.ny1.zerops.app/]
+
 ## What it Does 
 
 Three services sit behind the web dashboard. An API accepts DICOM uploads and stores the raw file in object storage. A queue hands the file off for processing. A worker reads the file's actual metadata — patient info, scan type, study details and renders its real pixel data into an image. Postgres holds everything, and the dashboard polls for new studies as they land, so there's no manual refresh and no desktop viewer software to install.
