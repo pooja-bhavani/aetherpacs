@@ -28,7 +28,15 @@ AetherPACS is a proof of concept showing that core medical imaging capabilitiesâ
 
 ## Step-by-Step Project Testing & Verification
 
-### 1. Open the Dashboard
+### 1. API Verification
+
+```bash
+curl -s -w "\nHTTP %{http_code}\n"
+      https://api-21f-3000.ny1.zerops.app/health
+```
+<img width="1470" height="161" alt="image" src="https://github.com/user-attachments/assets/bd6ad38f-5ff3-4fdb-9ee6-fc3a1742ddf0" />
+
+### 2. Open the Dashboard
 Navigate to your live web diagnostic workspace:
 ðŸ‘‰ **[https://web-21f.ny1.zerops.app/](https://web-21f.ny1.zerops.app/)**
 
