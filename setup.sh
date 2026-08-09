@@ -35,7 +35,7 @@ zerops:
     build:
       base: nodejs@20
       buildCommands:
-        - cd web && npm install
+        - cd web && npm install --include=dev
         - cd web && npm run build
       deployFiles:
         - ./web/dist
@@ -50,7 +50,7 @@ zerops:
     build:
       base: nodejs@20
       buildCommands:
-        - cd api && npm install
+        - cd api && npm install --include=dev
         - cd api && npm run build
       deployFiles:
         - ./api/dist
