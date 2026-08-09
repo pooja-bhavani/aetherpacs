@@ -34,8 +34,10 @@ zerops:
   - setup: web
     build:
       base: nodejs@20
+      envVariables:
+        NODE_ENV: development
       buildCommands:
-        - cd web && npm install --include=dev
+        - cd web && npm install
         - cd web && npm run build
       deployFiles:
         - ./web/dist
@@ -49,8 +51,10 @@ zerops:
   - setup: api
     build:
       base: nodejs@20
+      envVariables:
+        NODE_ENV: development
       buildCommands:
-        - cd api && npm install --include=dev
+        - cd api && npm install
         - cd api && npm run build
       deployFiles:
         - ./api/dist
