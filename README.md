@@ -29,6 +29,8 @@ AetherPACS is a proof of concept showing that core medical imaging capabilitiesâ
 Navigate to your live web diagnostic workspace:
 ðŸ‘‰ **[https://web-21f.ny1.zerops.app/](https://web-21f.ny1.zerops.app/)**
 
+<img width="1467" height="879" alt="image" src="https://github.com/user-attachments/assets/7b908c3c-97ce-443d-ab79-3ad46453ff51" />
+
 How it works
 1. Upload: the API gateway validates the DICOM file and stores it in S3-compatible object storage
 2. Queue: an ingest job is dispatched over NATS for asynchronous processing
